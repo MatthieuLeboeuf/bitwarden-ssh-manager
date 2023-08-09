@@ -69,8 +69,9 @@ type FrontendHost struct {
 }
 
 type FrontendFolder struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id    string `json:"id"`
+	Name  string `json:"name"`
+	Hosts int    `json:"hosts"`
 }
 
 type CipherStringType int
@@ -203,9 +204,17 @@ func Sync() string {
 		folder := &resData.Folders[i]
 		temp, _ := secrets.decryptStr(folder.Name, nil)
 		if strings.HasPrefix(temp, "bsm-") {
+			hosts := 0
+			for f := range resData.Ciphers {
+				cipher := &resData.Ciphers[f]
+				if cipher.FolderId.String() == folder.ID.String() {
+					hosts++
+				}
+			}
 			frontData.Folders = append(frontData.Folders, FrontendFolder{
-				Id:   folder.ID.String(),
-				Name: temp[4:],
+				Id:    folder.ID.String(),
+				Name:  temp[4:],
+				Hosts: hosts,
 			})
 			folders = append(folders, folder.ID.String())
 		}

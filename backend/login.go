@@ -83,6 +83,10 @@ func Login(password string, otpCode int, otpRemember bool) int {
 		resData := &ErrorLoginResponse{}
 		_ = json.NewDecoder(res.Body).Decode(resData)
 		if resData.ErrorDescription == "Two factor required." {
+			if totpToken != "" {
+				viper.Set("vault.totp", "")
+				_ = viper.WriteConfig()
+			}
 			return LoginWaitOtp
 		} else if strings.Contains(resData.Message, "Invalid TOTP code") {
 			return LoginInvalidOtp

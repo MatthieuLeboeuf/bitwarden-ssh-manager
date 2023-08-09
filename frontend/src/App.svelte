@@ -6,15 +6,20 @@
   let authMessage = '';
 
   let password = '';
-  let otpCode = '';
+  let otpCode = null;
   let optRemember = false;
 
   let loading = false;
 
-  let data = {hosts: []};
+  let data = {hosts: [], folders: []};
+
+  let currentFolder = {
+    id: '',
+    name: '',
+  };
 
   async function auth() {
-    authStatus = await Login(password, otpCode===''?0:otpCode, optRemember);
+    authStatus = await Login(password, otpCode===null?0:otpCode, optRemember);
     switch (authStatus) {
       case 0:
         authMessage = '';
@@ -39,12 +44,20 @@
   async function sync() {
     loading = true;
     data = JSON.parse(await Sync());
-    console.log(data);
     loading = false;
   }
 
   async function authKey(e) {
     if (e.keyCode === 13) await auth();
+  }
+
+  async function setCurrentFolder(folder) {
+    if (!folder) {
+      currentFolder.id = '';
+      return;
+    }
+    currentFolder.id = folder.id;
+    currentFolder.name = folder.name;
   }
 
   onMount(async () => {
@@ -77,7 +90,7 @@
             <i class="bi bi-plus-square" style="font-size: 25px;"></i>
             <i class="bi bi-folder-plus mx-lg-3" style="font-size: 25px;"></i>
           </div>
-          <i class="bi bi-arrow-clockwise" style="font-size: 25px;"></i>
+          <i class="bi bi-arrow-clockwise" style="font-size: 25px;" on:click={sync} on:keypress={sync}></i>
         </div>
       </div>
     </nav>
@@ -133,17 +146,40 @@
     {/if}
 
     {#if authStatus === 0}
+      {#if currentFolder.id !== ''}
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item" on:click={() => setCurrentFolder()} on:keypress={() => setCurrentFolder()}>All hosts</li>
+            <li class="breadcrumb-item active" aria-current="page">{currentFolder.name}</li>
+          </ol>
+        </nav>
+      {/if}
       <div class="row row-cols-1 row-cols-xl-5 row-cols-lg-4 row-cols-md-3 row-cols-sm-2 g-3">
-        {#each data.hosts as host}
-          <div class="col">
-            <div class="card h-100">
-              <div class="card-body" on:click={LaunchTerminal(JSON.stringify(host))} on:keypress={LaunchTerminal(JSON.stringify(host))}>
-                <h5 class="card-title">{host.name}</h5>
-                <p class="card-text">{host.username}, {host.password===""?"ssh key":"password"}, {host.folder}</p>
+        {#if currentFolder.id === ''}
+          {#each data.folders as folder}
+            <div class="col">
+              <div class="card h-100">
+                <div class="card-body" on:click={() => setCurrentFolder(folder)} on:keypress={() => setCurrentFolder(folder)}>
+                  <h5 class="card-title">{folder.name}</h5>
+                  <p class="card-text">{folder.hosts} host{folder.hosts===1?'':'s'}</p>
+                </div>
               </div>
             </div>
-          </div>
-        {/each}
+          {/each}
+        {:else}
+          {#each data.hosts as host}
+            {#if host.folder === currentFolder.id}
+              <div class="col">
+                <div class="card h-100">
+                  <div class="card-body" on:click={() => LaunchTerminal(JSON.stringify(host))} on:keypress={() => LaunchTerminal(JSON.stringify(host))}>
+                    <h5 class="card-title">{host.name}</h5>
+                    <p class="card-text">{host.username}, {host.password===""?"ssh key":"password"}</p>
+                  </div>
+                </div>
+              </div>
+            {/if}
+          {/each}
+        {/if}
       </div>
     {/if}
   </div>
