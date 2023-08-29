@@ -10,6 +10,7 @@
   let optRemember = false;
 
   let loading = false;
+  let editing = false;
 
   let data = {hosts: [], folders: []};
 
@@ -17,6 +18,8 @@
     id: '',
     name: '',
   };
+
+  let currentHost = {};
 
   async function auth() {
     authStatus = await Login(password, otpCode===null?0:otpCode, optRemember);
@@ -58,6 +61,11 @@
     }
     currentFolder.id = folder.id;
     currentFolder.name = folder.name;
+  }
+
+  async function edit(host) {
+    currentHost = host;
+    editing = true;
   }
 
   onMount(async () => {
@@ -171,7 +179,7 @@
             {#if host.folder === currentFolder.id}
               <div class="col">
                 <div class="card h-100">
-                  <div class="card-body" on:click={() => LaunchTerminal(JSON.stringify(host))} on:keypress={() => LaunchTerminal(JSON.stringify(host))}>
+                  <div class="card-body" on:click={() => LaunchTerminal(JSON.stringify(host))} on:keypress={() => LaunchTerminal(JSON.stringify(host))} on:contextmenu|preventDefault={()=>edit(host)}>
                     <h5 class="card-title">{host.name}</h5>
                     <p class="card-text">{host.username}, {host.password===""?"ssh key":"password"}</p>
                   </div>
@@ -182,6 +190,42 @@
         {/if}
       </div>
     {/if}
+
+    {#if editing}
+      <div class="modal" tabindex="-1" style="display: block">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">{currentHost.name}</h5>
+              <button type="button" class="btn-close" aria-label="Close" on:click={() => editing = false}></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="host" class="form-label">Host</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="host" value="{currentHost.host}">
+                  <button type="button" class="btn btn-outline-secondary" on:click={() => navigator.clipboard.writeText(currentHost.host)}>
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+                <div class="row">
+                  <div class="col">
+                    <input type="text" class="form-control" placeholder="First name" aria-label="First name">
+                  </div>
+                  <div class="col">
+                    <input type="text" class="form-control" placeholder="Last name" aria-label="Last name">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+  {/if}
+
   </div>
 
   <!--<div class="input-box" id="input">

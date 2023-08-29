@@ -56,6 +56,6 @@ func (a *App) LaunchTerminal(data string) {
 		command = "sshpass -p " + host.Password + " ssh " + host.Username + "@" + host.Host + " -p " + host.Port
 	}
 
-	cmd := exec.Command("kgx", "-e", command)
+	cmd := exec.Command("gnome-terminal", "-e", command, "-t", host.Name)
 	_ = cmd.Run()
 }
